@@ -257,7 +257,14 @@ export default async (req: Request) => {
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.min.js"></script>
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="${clerkPubKey}"
+    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+    onload="clerkLoaded()"
+    onerror="clerkFailed()"
+  ></script>
   <script>
     const PARAMS = {
       clientId: ${JSON.stringify(clientId)},
@@ -280,10 +287,19 @@ export default async (req: Request) => {
       showStep('error-step');
     }
 
+    function clerkFailed() {
+      showError('Configuration Error', 'Unable to load authentication. Please try again.');
+    }
+
+    function clerkLoaded() { init(); }
+
     async function init() {
       try {
-        const clerk = new window.Clerk(${JSON.stringify(clerkPubKey)});
-        await clerk.load();
+        // Clerk CDN auto-creates window.Clerk as an instance
+        const clerk = window.Clerk;
+        if (!clerk) { showError('Configuration Error', 'Clerk not available.'); return; }
+        // Wait for Clerk to be ready if not already loaded
+        if (!clerk.loaded) await clerk.load();
 
         if (clerk.user) {
           showConsent(clerk);
