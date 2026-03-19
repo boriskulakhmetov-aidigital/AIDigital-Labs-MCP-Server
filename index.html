@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Digital Labs MCP Server</title>
+  <title>AI Digital Labs — MCP Server</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -39,17 +39,59 @@
       font-size: 0.8rem;
       margin-bottom: 24px;
     }
+    .methods {
+      text-align: left;
+      margin: 24px 0;
+      padding: 20px;
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 12px;
+    }
+    .methods h3 { color: #999; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+    .method {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .method:last-child { border-bottom: none; }
+    .method-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .method-name { color: #ccc; font-weight: 600; font-size: 0.95rem; }
+    .method-desc { color: #666; font-size: 0.85rem; margin-top: 2px; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>AI Digital Labs</h1>
     <h2>MCP Server</h2>
-    <div class="badge">Model Context Protocol</div>
-    <p>Connect via <strong>Claude Desktop &rarr; Settings &rarr; Connectors</strong></p>
-    <p>Endpoint:<br><code>https://mcp.apps.aidigitallabs.com/mcp?key=YOUR_API_KEY</code></p>
+    <div class="badge">Model Context Protocol v2.0</div>
+
+    <div class="methods">
+      <h3>Connect to Claude</h3>
+      <div class="method">
+        <span class="method-icon">1.</span>
+        <div>
+          <div class="method-name">Claude.ai Marketplace (Recommended)</div>
+          <div class="method-desc">Settings &rarr; Connectors &rarr; Search "AI Digital Labs" &rarr; Connect with your account</div>
+        </div>
+      </div>
+      <div class="method">
+        <span class="method-icon">2.</span>
+        <div>
+          <div class="method-name">Claude Desktop / Claude Code</div>
+          <div class="method-desc">Add to config with URL: <code>https://mcp.apps.aidigitallabs.com/mcp</code></div>
+        </div>
+      </div>
+      <div class="method">
+        <span class="method-icon">3.</span>
+        <div>
+          <div class="method-name">Direct API</div>
+          <div class="method-desc">REST API with API key &mdash; see developer docs</div>
+        </div>
+      </div>
+    </div>
+
     <p style="margin-top: 32px;">
-      <a href="https://developers.apps.aidigitallabs.com">Full Documentation &rarr;</a>
+      <a href="https://developers.apps.aidigitallabs.com">Developer Documentation &rarr;</a>
     </p>
   </div>
 </body>
