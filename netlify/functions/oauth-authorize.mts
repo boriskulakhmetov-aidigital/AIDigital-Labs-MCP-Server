@@ -1,17 +1,14 @@
 /**
- * GET /oauth/authorize
- * OAuth 2.0 authorization endpoint — serves the Clerk-authenticated consent page.
+ * /oauth/authorize — OAuth 2.0 Authorization Endpoint
  *
- * Query params (from Claude):
- *   response_type=code
- *   client_id=claude (or any registered client)
- *   redirect_uri=https://claude.ai/api/mcp/auth_callback
- *   scope=mcp:tools
- *   state=<opaque>
+ * GET: Serves the Clerk-authenticated consent page (with PKCE support)
+ * POST: Called by the consent page JS — validates Clerk JWT, generates auth code, redirects
  *
- * POST /oauth/authorize
- * Called by the consent page JS after Clerk authentication.
- * Generates an auth code and returns the redirect URL.
+ * Full flow:
+ *   1. Claude redirects here with response_type=code, code_challenge, state
+ *   2. User sees Clerk sign-in → consent screen
+ *   3. User clicks Authorize → JS calls POST with Clerk JWT
+ *   4. We validate, generate code, redirect back to Claude with ?code=xxx&state=xxx
  */
 import { createClient } from '@supabase/supabase-js';
 import { verifyToken, createClerkClient } from '@clerk/backend';
@@ -20,7 +17,8 @@ import { sha256, generateToken } from './_shared/crypto.js';
 const ALLOWED_REDIRECT_PREFIXES = [
   'https://claude.ai/',
   'https://claude.com/',
-  'http://localhost',
+  'http://localhost:',
+  'http://127.0.0.1:',
 ];
 
 const CORS = {
@@ -40,7 +38,7 @@ export default async (req: Request) => {
 
   const url = new URL(req.url);
 
-  // ---------- POST: generate auth code after consent ----------
+  // ---------- POST: generate auth code after user consents ----------
   if (req.method === 'POST') {
     let body: {
       clerk_token: string;
@@ -48,6 +46,8 @@ export default async (req: Request) => {
       client_id: string;
       state: string;
       scope: string;
+      code_challenge: string;
+      code_challenge_method: string;
     };
     try {
       body = await req.json();
@@ -66,7 +66,6 @@ export default async (req: Request) => {
     try {
       const payload = await verifyToken(body.clerk_token, { secretKey });
       userId = payload.sub;
-      // Get email
       try {
         const clerk = createClerkClient({ secretKey });
         const user = await clerk.users.getUser(userId);
@@ -83,7 +82,7 @@ export default async (req: Request) => {
       return Response.json({ error: 'Invalid redirect_uri' }, { status: 400, headers: CORS });
     }
 
-    // Check user exists and get org
+    // Check user exists in app_users
     const supabase = getSupabase();
     const { data: appUser } = await supabase
       .from('app_users')
@@ -93,7 +92,7 @@ export default async (req: Request) => {
 
     if (!appUser || appUser.status === 'blocked') {
       return Response.json(
-        { error: 'no_account', message: 'No AIDigital Labs account found. Sign up at aidigitallabs.com' },
+        { error: 'no_account', message: 'No AI Digital Labs account found. Sign up at aidigitallabs.com' },
         { status: 403, headers: CORS },
       );
     }
@@ -110,7 +109,6 @@ export default async (req: Request) => {
       if (org) {
         tier = org.tier || 'tier_0';
         orgName = org.name || '';
-        // Check trial expiry
         if (tier === 'tier_0' && org.trial_expires_at && new Date(org.trial_expires_at) < new Date()) {
           return Response.json(
             { error: 'trial_expired', message: 'Your trial has expired. Contact sales to upgrade.' },
@@ -120,15 +118,17 @@ export default async (req: Request) => {
       }
     }
 
-    // Generate auth code (short-lived, 5 min)
+    // Generate auth code (short-lived, 5 min) with PKCE challenge
     const code = generateToken('mc');
     await supabase.from('mcp_oauth_codes').insert({
       code,
       user_id: userId,
       org_id: appUser.org_id,
       redirect_uri: body.redirect_uri,
-      client_id: body.client_id,
+      client_id: body.client_id || 'claude',
       scope: body.scope || 'mcp:tools',
+      code_challenge: body.code_challenge || null,
+      code_challenge_method: body.code_challenge_method || 'S256',
       expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
     });
 
@@ -138,17 +138,19 @@ export default async (req: Request) => {
     if (body.state) redirectUrl.searchParams.set('state', body.state);
 
     return Response.json(
-      { redirect_url: redirectUrl.toString(), tier, org_name: orgName },
+      { redirect_url: redirectUrl.toString(), tier, org_name: orgName, email },
       { status: 200, headers: CORS },
     );
   }
 
-  // ---------- GET: serve consent page ----------
+  // ---------- GET: serve the consent page ----------
   const responseType = url.searchParams.get('response_type');
   const clientId = url.searchParams.get('client_id') || 'claude';
   const redirectUri = url.searchParams.get('redirect_uri') || '';
   const scope = url.searchParams.get('scope') || 'mcp:tools';
   const state = url.searchParams.get('state') || '';
+  const codeChallenge = url.searchParams.get('code_challenge') || '';
+  const codeChallengeMethod = url.searchParams.get('code_challenge_method') || 'S256';
 
   if (responseType !== 'code') {
     return new Response('Invalid response_type. Expected "code".', { status: 400 });
@@ -185,10 +187,10 @@ export default async (req: Request) => {
     .tool-dot { width: 6px; height: 6px; border-radius: 50%; background: #0009DC; flex-shrink: 0; }
     .tier-badge {
       display: inline-block; padding: 4px 12px; border-radius: 12px;
-      font-size: 0.8rem; margin: 16px 0;
+      font-size: 0.8rem; margin: 8px 0;
     }
     .tier-badge.active { background: #0009DC22; color: #7b8cff; }
-    .tier-badge.trial { background: #dc910022; color: #dcb100; }
+    .tier-badge.internal { background: #00dc5022; color: #4ade80; }
     .btn {
       display: block; width: 100%; padding: 14px; border: none; border-radius: 10px;
       font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 16px; transition: all 0.15s;
@@ -200,18 +202,19 @@ export default async (req: Request) => {
     .btn-secondary:hover { background: #222; color: #ccc; }
     .status { margin-top: 16px; font-size: 0.85rem; color: #666; }
     .status.error { color: #dc3545; }
-    .clerk-container { margin: 24px 0; }
-    #sign-in-step, #consent-step, #loading-step, #error-step { display: none; }
+    .clerk-container { margin: 24px 0; min-height: 300px; }
+    #sign-in-step, #consent-step, #loading-step, #error-step, #success-step { display: none; }
     #loading-step { display: block; }
     .spinner { margin: 40px auto; width: 32px; height: 32px; border: 3px solid #222; border-top-color: #0009DC; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .usage-info { font-size: 0.85rem; color: #666; margin-top: 8px; }
+    .client-name { color: #7b8cff; font-weight: 600; }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="logo">AI Digital Labs</div>
-    <div class="subtitle">Connect to Claude</div>
+    <div class="subtitle">Authorize Connection</div>
 
     <div id="loading-step">
       <div class="spinner"></div>
@@ -225,10 +228,10 @@ export default async (req: Request) => {
     </div>
 
     <div id="consent-step">
-      <p style="color:#999;">Allow <strong>Claude</strong> to use your AI Digital Labs tools?</p>
+      <p style="color:#999;">Allow <span class="client-name">${clientId}</span> to use your AI Digital Labs tools?</p>
       <div id="user-info" style="margin:16px 0; font-size:0.9rem;"></div>
       <div class="tools-list">
-        <h3>Tools Claude will access</h3>
+        <h3>Tools that will be available</h3>
         <div class="tool-item"><span class="tool-dot"></span>Website Audit</div>
         <div class="tool-item"><span class="tool-dot"></span>Neuromarketing Audit</div>
         <div class="tool-item"><span class="tool-dot"></span>Prompt Engineering</div>
@@ -237,8 +240,14 @@ export default async (req: Request) => {
       </div>
       <p class="usage-info">Usage will count toward your plan limits.</p>
       <button id="authorize-btn" class="btn btn-primary">Authorize</button>
-      <button id="cancel-btn" class="btn btn-secondary" onclick="window.close()">Cancel</button>
+      <button class="btn btn-secondary" onclick="window.close()">Cancel</button>
       <p id="consent-status" class="status"></p>
+    </div>
+
+    <div id="success-step">
+      <div style="font-size:2rem; margin-bottom:16px;">&#10003;</div>
+      <p style="color:#4ade80; font-size:1.1rem; margin-bottom:8px;">Connected!</p>
+      <p style="color:#666;">Redirecting back to Claude...</p>
     </div>
 
     <div id="error-step">
@@ -255,10 +264,12 @@ export default async (req: Request) => {
       redirectUri: ${JSON.stringify(redirectUri)},
       scope: ${JSON.stringify(scope)},
       state: ${JSON.stringify(state)},
+      codeChallenge: ${JSON.stringify(codeChallenge)},
+      codeChallengeMethod: ${JSON.stringify(codeChallengeMethod)},
     };
 
     function showStep(id) {
-      ['loading-step','sign-in-step','consent-step','error-step'].forEach(s => {
+      ['loading-step','sign-in-step','consent-step','error-step','success-step'].forEach(s => {
         document.getElementById(s).style.display = s === id ? 'block' : 'none';
       });
     }
@@ -279,29 +290,28 @@ export default async (req: Request) => {
         } else {
           showStep('sign-in-step');
           clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
-            afterSignInUrl: window.location.href,
             appearance: {
-              baseTheme: undefined,
               variables: { colorPrimary: '#0009DC' },
             },
           });
-          // Watch for sign-in completion
           clerk.addListener(({ user }) => {
-            if (user) showConsent(clerk);
+            if (user) {
+              clerk.unmountSignIn(document.getElementById('clerk-sign-in'));
+              showConsent(clerk);
+            }
           });
         }
       } catch (err) {
-        showError('Configuration Error', 'Unable to initialize authentication.');
+        showError('Configuration Error', 'Unable to initialize authentication. ' + (err.message || ''));
       }
     }
 
     async function showConsent(clerk) {
       const user = clerk.user;
-      const email = user.primaryEmailAddress?.emailAddress || '';
+      const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '';
       document.getElementById('user-info').innerHTML =
-        '<span style="color:#7b8cff;">' + email + '</span>';
+        'Signed in as <span style="color:#7b8cff;">' + email + '</span>';
       showStep('consent-step');
-
       document.getElementById('authorize-btn').onclick = () => authorize(clerk);
     }
 
@@ -309,15 +319,13 @@ export default async (req: Request) => {
       const btn = document.getElementById('authorize-btn');
       const status = document.getElementById('consent-status');
       btn.disabled = true;
-      btn.textContent = 'Connecting...';
+      btn.textContent = 'Authorizing...';
       status.textContent = '';
 
       try {
-        // Get Clerk session token
         const token = await clerk.session.getToken();
         if (!token) throw new Error('No session token');
 
-        // Call our backend to generate auth code
         const res = await fetch('/oauth/authorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -327,6 +335,8 @@ export default async (req: Request) => {
             client_id: PARAMS.clientId,
             state: PARAMS.state,
             scope: PARAMS.scope,
+            code_challenge: PARAMS.codeChallenge,
+            code_challenge_method: PARAMS.codeChallengeMethod,
           }),
         });
 
@@ -343,8 +353,9 @@ export default async (req: Request) => {
           return;
         }
 
-        // Redirect to Claude with auth code
-        window.location.href = data.redirect_url;
+        // Show success briefly then redirect
+        showStep('success-step');
+        setTimeout(() => { window.location.href = data.redirect_url; }, 800);
       } catch (err) {
         status.textContent = err.message || 'Authorization failed';
         status.className = 'status error';

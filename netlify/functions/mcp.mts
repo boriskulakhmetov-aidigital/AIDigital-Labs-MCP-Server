@@ -270,9 +270,18 @@ export default async (req: Request) => {
   // Authenticate
   const auth = await authenticate(req);
   if (!auth.valid) {
-    return jsonResponse(
-      { jsonrpc: '2.0', error: { code: -32000, message: auth.error || 'Unauthorized' } },
-      401,
+    // Return 401 with OAuth discovery header per MCP spec
+    // Claude will look up /.well-known/oauth-authorization-server and start the OAuth flow
+    return new Response(
+      JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: auth.error || 'Unauthorized' } }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'WWW-Authenticate': 'Bearer resource_metadata="https://mcp.apps.aidigitallabs.com/.well-known/oauth-protected-resource"',
+          ...CORS,
+        },
+      },
     );
   }
 

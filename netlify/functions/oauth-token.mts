@@ -49,7 +49,7 @@ export default async (req: Request) => {
 
   // ---------- authorization_code ----------
   if (grantType === 'authorization_code') {
-    const { code, redirect_uri, client_id } = params;
+    const { code, redirect_uri, client_id, code_verifier } = params;
     if (!code) {
       return Response.json({ error: 'invalid_request', error_description: 'Missing code' }, { status: 400, headers: CORS });
     }
@@ -70,6 +70,22 @@ export default async (req: Request) => {
     // Validate redirect_uri matches
     if (redirect_uri && authCode.redirect_uri !== redirect_uri) {
       return Response.json({ error: 'invalid_grant', error_description: 'redirect_uri mismatch' }, { status: 400, headers: CORS });
+    }
+
+    // Verify PKCE code_verifier if code_challenge was stored
+    if (authCode.code_challenge) {
+      if (!code_verifier) {
+        return Response.json({ error: 'invalid_grant', error_description: 'Missing code_verifier' }, { status: 400, headers: CORS });
+      }
+      // S256: BASE64URL(SHA256(code_verifier)) must equal code_challenge
+      const verifierHash = await sha256(code_verifier);
+      // Convert hex hash to base64url
+      const hashBytes = new Uint8Array(verifierHash.match(/.{2}/g)!.map((b: string) => parseInt(b, 16)));
+      const base64url = btoa(String.fromCharCode(...hashBytes))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      if (base64url !== authCode.code_challenge) {
+        return Response.json({ error: 'invalid_grant', error_description: 'PKCE verification failed' }, { status: 400, headers: CORS });
+      }
     }
 
     // Mark code as used
