@@ -92,6 +92,31 @@ export default async (req: Request) => {
 
         if (name === 'check_status') {
           result = await client.status(args.app, args.job_id);
+
+          // Add time estimates and instructions
+          const status = result.status as string;
+          const meta = result.meta as any;
+          let estimatedSecondsRemaining: number | null = null;
+
+          if (meta?.steps_done != null && meta?.total_steps) {
+            const progressRatio = (meta.steps_done as number) / (meta.total_steps as number);
+            const typicalSeconds: Record<string, number> = {
+              'website-audit': 300,
+              'neuromarketing': 480,
+              'prompt-engineering': 120,
+              'aio-optimization': 600,
+              'synthetic-focus-group': 480,
+            };
+            const total = typicalSeconds[args.app] || 300;
+            estimatedSecondsRemaining = Math.round(total * (1 - progressRatio));
+          }
+
+          (result as any).estimated_seconds_remaining = estimatedSecondsRemaining;
+          (result as any).instructions = status === 'complete'
+            ? `Job complete! Call get_result with job_id="${args.job_id}" and app="${args.app}" to retrieve the full report.`
+            : status === 'error'
+            ? `Job failed: ${(result as any).error || 'unknown error'}`
+            : `Still processing. Call check_status again in ${Math.min(estimatedSecondsRemaining || 30, 30)} seconds.`;
         } else if (name === 'get_result') {
           result = await client.result(args.app, args.job_id, args.format || 'both');
         } else if (appMap[name]) {
