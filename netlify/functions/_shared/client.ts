@@ -13,7 +13,7 @@ export class AIDigitalLabsClient {
     const baseUrl = APP_URLS[app];
     if (!baseUrl) throw new Error(`Unknown app: ${app}`);
 
-    const res = await fetch(`${baseUrl}/api/v1/submit`, {
+    const res = await fetch(`${baseUrl}/.netlify/functions/api-submit`, {
       method: 'POST',
       headers: {
         'X-API-Key': this.apiKey,
@@ -34,7 +34,7 @@ export class AIDigitalLabsClient {
     const baseUrl = APP_URLS[app];
     if (!baseUrl) throw new Error(`Unknown app: ${app}`);
 
-    const res = await fetch(`${baseUrl}/api/v1/status/${encodeURIComponent(jobId)}`, {
+    const res = await fetch(`${baseUrl}/.netlify/functions/api-status?job_id=${encodeURIComponent(jobId)}`, {
       headers: { 'X-API-Key': this.apiKey },
     });
 
@@ -51,7 +51,7 @@ export class AIDigitalLabsClient {
     if (!baseUrl) throw new Error(`Unknown app: ${app}`);
 
     const res = await fetch(
-      `${baseUrl}/api/v1/result/${encodeURIComponent(jobId)}?format=${encodeURIComponent(format)}`,
+      `${baseUrl}/.netlify/functions/api-result?job_id=${encodeURIComponent(jobId)}&format=${encodeURIComponent(format)}`,
       { headers: { 'X-API-Key': this.apiKey } },
     );
 
