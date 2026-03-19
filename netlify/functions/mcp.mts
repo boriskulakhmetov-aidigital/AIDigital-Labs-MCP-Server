@@ -95,7 +95,14 @@ export default async (req: Request) => {
         } else if (name === 'get_result') {
           result = await client.result(args.app, args.job_id, args.format || 'both');
         } else if (appMap[name]) {
-          result = await client.submitAndWait(appMap[name], args);
+          // Submit only — don't wait (Netlify Functions have a 10s timeout)
+          // Claude will call check_status and get_result separately
+          const submitResult = await client.submit(appMap[name], args);
+          result = {
+            ...submitResult,
+            app: appMap[name],
+            next_steps: `Job submitted. Use check_status with job_id="${submitResult.job_id}" and app="${appMap[name]}" to monitor progress. When status is "complete", use get_result to retrieve the report. Typical processing time: 3-15 minutes depending on the tool.`,
+          };
         } else {
           throw new Error(`Unknown tool: ${name}`);
         }
