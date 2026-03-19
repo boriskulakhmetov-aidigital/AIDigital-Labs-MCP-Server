@@ -305,7 +305,10 @@ export default async (req: Request) => {
           showConsent(clerk);
         } else {
           showStep('sign-in-step');
+          // afterSignInUrl must point back here so Clerk doesn't redirect to "/"
+          const currentUrl = window.location.href;
           clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
+            forceRedirectUrl: currentUrl,
             appearance: {
               variables: { colorPrimary: '#0009DC' },
             },
