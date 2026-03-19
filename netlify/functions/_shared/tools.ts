@@ -1,28 +1,12 @@
-export interface Tool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: string;
-    properties: Record<string, unknown>;
-    required: string[];
-  };
-}
-
-const APP_URLS: Record<string, string> = {
-  'website-audit': 'https://website-audit.apps.aidigitallabs.com',
-  'neuromarketing': 'https://neuromarketing-audit.apps.aidigitallabs.com',
-  'prompt-engineering': 'https://prompt-engineer.apps.aidigitallabs.com',
-  'aio-optimization': 'https://aio-optimization.apps.aidigitallabs.com',
-  'synthetic-focus-group': 'https://synthetic-focus-group.apps.aidigitallabs.com',
-};
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 export const TOOLS: Tool[] = [
   {
     name: 'website_audit',
     description:
-      'Run a comprehensive website audit analyzing SEO, conversion optimization, and accessibility. Returns detailed scores, recommendations, and an action roadmap.',
+      'Submit a website audit job. Returns a job_id. After calling this, you MUST repeatedly call check_status with the returned job_id and app="website-audit" every 15 seconds until status is "complete", then call get_result to retrieve the full report. Processing takes 4-8 minutes.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         website_url: {
           type: 'string',
@@ -58,9 +42,9 @@ export const TOOLS: Tool[] = [
   {
     name: 'neuromarketing_audit',
     description:
-      'Score a creative asset (banner, ad, landing page) against 41 neuromarketing and color psychology criteria. Analyzes visual hierarchy, emotional triggers, and behavioral patterns.',
+      'Submit a neuromarketing audit job. Returns a job_id. After calling this, you MUST repeatedly call check_status with the returned job_id and app="neuromarketing" every 15 seconds until status is "complete", then call get_result to retrieve the full report. Processing takes 8-12 minutes.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         asset_url: {
           type: 'string',
@@ -96,7 +80,7 @@ export const TOOLS: Tool[] = [
     description:
       'Design, test, and optimize an AI prompt. Tests the prompt 3 times for consistency, identifies hallucinations and drift, and produces an engineered version.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         prompt_text: {
           type: 'string',
@@ -137,9 +121,9 @@ export const TOOLS: Tool[] = [
   {
     name: 'aio_scan',
     description:
-      'Audit how AI search engines (ChatGPT, Gemini, Perplexity, etc.) see a brand or product. Scans multiple engines with generated queries and synthesizes findings.',
+      'Submit an AIO scan job. Returns a job_id. After calling this, you MUST repeatedly call check_status with the returned job_id and app="aio-optimization" every 15 seconds until status is "complete", then call get_result. Processing takes 10-15 minutes.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         concept_name: {
           type: 'string',
@@ -173,9 +157,9 @@ export const TOOLS: Tool[] = [
   {
     name: 'synthetic_focus_group',
     description:
-      'Simulate an AI-powered focus group to test creative concepts. Generates buyer personas and evaluates creatives through their perspectives.',
+      'Submit a focus group simulation job. Returns a job_id. After calling this, you MUST repeatedly call check_status with the returned job_id and app="synthetic-focus-group" every 15 seconds until status is "complete", then call get_result. Processing takes 8-12 minutes.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         brand_name: {
           type: 'string',
@@ -208,9 +192,9 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'check_status',
-    description: 'Check the status of a running audit, scan, or analysis job.',
+    description: 'Check job status. If status is NOT "complete", you MUST call this tool again after the recommended wait time (see estimated_seconds_remaining in response). Keep calling until status is "complete" or "error". When complete, call get_result.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         job_id: {
           type: 'string',
@@ -234,9 +218,9 @@ export const TOOLS: Tool[] = [
   {
     name: 'get_result',
     description:
-      'Get the completed report from a finished audit, scan, or analysis. Returns both markdown and structured JSON.',
+      'Get the completed report. Only call this AFTER check_status returns status="complete". Returns markdown_report, visual_report (structured JSON), and report_url (hosted interactive report link).',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         job_id: {
           type: 'string',
