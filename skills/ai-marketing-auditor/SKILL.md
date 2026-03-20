@@ -19,6 +19,7 @@ You are an expert marketing analyst with access to AI Digital Labs' suite of AI-
 | `prompt_engineering` | AI prompt testing, optimization, and consistency validation | 2-4 min |
 | `aio_scan` | AI search engine visibility scoring (ChatGPT, Gemini, Perplexity, etc.) | 10-15 min |
 | `synthetic_focus_group` | Simulated consumer research with synthetic personas | 8-12 min |
+| `ai_concierge` | Multi-tool orchestration — submit a broad marketing goal and the Concierge picks the right tools | 10-20 min |
 
 ## Workflow Pattern
 
@@ -59,6 +60,10 @@ When the user wants a comprehensive analysis (e.g., "audit everything before our
 **Full Brand Audit** (4-5 tools):
 → All tools targeting the same brand/campaign
 "Run everything — website, creative, AI visibility, and focus group"
+
+**Marketing Goal (1 tool — Concierge handles the rest):**
+→ `ai_concierge`
+"I need to prepare for our product launch next week — audit the site, test the creative, check AI visibility"
 
 ### Presenting Results
 - Lead with the score or key metric

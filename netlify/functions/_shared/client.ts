@@ -4,6 +4,7 @@ const APP_URLS: Record<string, string> = {
   'prompt-engineering': 'https://prompt-engineer.apps.aidigitallabs.com',
   'aio-optimization': 'https://aio-optimization.apps.aidigitallabs.com',
   'synthetic-focus-group': 'https://synthetic-focus-group.apps.aidigitallabs.com',
+  'ai-concierge': 'https://ai-concierge.apps.aidigitallabs.com',
 };
 
 export class AIDigitalLabsClient {

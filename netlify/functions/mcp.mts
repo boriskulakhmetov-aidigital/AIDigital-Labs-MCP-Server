@@ -111,6 +111,7 @@ const TOOL_APP_MAP: Record<string, string> = {
   prompt_engineering: 'prompt-engineering',
   aio_scan: 'aio-optimization',
   synthetic_focus_group: 'synthetic-focus-group',
+  ai_concierge: 'ai-concierge',
 };
 
 /**
@@ -184,6 +185,7 @@ const TYPICAL_SECONDS: Record<string, number> = {
   'prompt-engineering': 120,
   'aio-optimization': 600,
   'synthetic-focus-group': 480,
+  'ai-concierge': 900,
 };
 
 async function executeTool(

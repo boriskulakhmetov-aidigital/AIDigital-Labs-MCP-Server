@@ -191,6 +191,37 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    name: 'ai_concierge',
+    description:
+      'Submit a marketing goal to the AI Concierge. The Concierge analyzes your goal, selects the right AI Digital Labs tools (website audit, neuromarketing, prompt engineering, AIO scan, focus group), dispatches them in parallel, waits for results, and returns a synthesized summary with individual report links. Use this when the user has a broad marketing goal that may require multiple tools. Returns a job_id. After calling this, use check_status and get_result to retrieve the synthesized findings. Processing takes 10-20 minutes (runs multiple tools).',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        goal: {
+          type: 'string',
+          description: 'The marketing goal or question (e.g., "Audit our website and test our hero banner for neuromarketing effectiveness")',
+        },
+        brand_name: {
+          type: 'string',
+          description: 'Brand or company name (optional)',
+        },
+        website_url: {
+          type: 'string',
+          description: 'Website URL if relevant to the goal (optional)',
+        },
+        asset_url: {
+          type: 'string',
+          description: 'Creative asset URL if relevant (optional)',
+        },
+        instructions: {
+          type: 'string',
+          description: 'Additional instructions or context for the Concierge (optional)',
+        },
+      },
+      required: ['goal'],
+    },
+  },
+  {
     name: 'check_status',
     description: 'Check job status. If status is NOT "complete", you MUST call this tool again after the recommended wait time (see estimated_seconds_remaining in response). Keep calling until status is "complete" or "error". When complete, call get_result.',
     inputSchema: {
@@ -208,6 +239,7 @@ export const TOOLS: Tool[] = [
             'prompt-engineering',
             'aio-optimization',
             'synthetic-focus-group',
+            'ai-concierge',
           ],
           description: 'Which app the job belongs to',
         },
@@ -234,6 +266,7 @@ export const TOOLS: Tool[] = [
             'prompt-engineering',
             'aio-optimization',
             'synthetic-focus-group',
+            'ai-concierge',
           ],
           description: 'Which app',
         },
