@@ -311,6 +311,7 @@ export default async (req: Request) => {
             forceRedirectUrl: currentUrl,
             appearance: {
               variables: { colorPrimary: '#0009DC' },
+              layout: { applicationName: 'AI Digital Labs' },
             },
           });
           clerk.addListener(({ user }) => {
