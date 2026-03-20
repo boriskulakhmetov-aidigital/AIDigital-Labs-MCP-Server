@@ -1,0 +1,21 @@
+<!-- AIDigital Labs Favicon — Part of Pseudo-CMS Design System
+     Colors defined in src/design-system/tokens.ts → BRAND_COLORS
+     To rebrand: update tokens.ts, then run buildFaviconSvg() to regenerate -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none">
+  <!-- Top-left: Electric Blue — right-pointing arrow -->
+  <rect x="0" y="0" width="10" height="10" rx="2" fill="#0009e4"/>
+  <polygon points="3.5,3.5 3.5,6.5 7,5" fill="white"/>
+
+  <!-- Top-right: Neon Green — filled circle -->
+  <rect x="12" y="0" width="10" height="10" rx="2" fill="#aef33e"/>
+  <circle cx="17" cy="5" r="2.4" fill="#080808"/>
+
+  <!-- Bottom-left: Vibrant Pink — X mark -->
+  <rect x="0" y="12" width="10" height="10" rx="2" fill="#e771de"/>
+  <line x1="3.2" y1="15.2" x2="6.8" y2="18.8" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="6.8" y1="15.2" x2="3.2" y2="18.8" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Bottom-right: Light blue — blue square -->
+  <rect x="12" y="12" width="10" height="10" rx="2" fill="#e0e8ff"/>
+  <rect x="15.5" y="15.5" width="3" height="3" rx="0.5" fill="#0009e4"/>
+</svg>
