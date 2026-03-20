@@ -1,11 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!-- AI Digital Labs BrandMark — 4-quadrant logo -->
+  <!-- Top-left: Electric Blue -->
   <rect x="8" y="8" width="116" height="116" rx="20" fill="#0009e4"/>
   <polygon points="42,42 42,82 82,62" fill="white"/>
+
+  <!-- Top-right: Neon Green -->
   <rect x="132" y="8" width="116" height="116" rx="20" fill="#aef33e"/>
   <circle cx="190" cy="66" r="26" fill="#080808"/>
+
+  <!-- Bottom-left: Vibrant Pink -->
   <rect x="8" y="132" width="116" height="116" rx="20" fill="#e771de"/>
   <line x1="42" y1="162" x2="96" y2="218" stroke="white" stroke-width="18" stroke-linecap="round"/>
   <line x1="96" y1="162" x2="42" y2="218" stroke="white" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- Bottom-right: Light Blue -->
   <rect x="132" y="132" width="116" height="116" rx="20" fill="#e0e8ff"/>
   <rect x="170" y="170" width="40" height="40" rx="6" fill="#0009e4"/>
 </svg>
